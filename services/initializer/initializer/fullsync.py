@@ -17,5 +17,5 @@ def full_sync(parent: "KitsuInitializer", data):
     ayon_api.post(
         f"{parent.entrypoint}/sync",
         project_name = project['name'],
-        project_dict = project
+        project = project
     )

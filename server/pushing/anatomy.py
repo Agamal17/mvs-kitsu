@@ -60,6 +60,8 @@ async def parse_task_types(
                 shortName=short_name,
             )
         )
+    if not result:
+        result = [default_task_types[0]]
 
     return result
 

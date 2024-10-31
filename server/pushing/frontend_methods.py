@@ -134,6 +134,7 @@ async def sync_project(
         raise e
 
     finally:
-        currently_syncing.remove(project_dict["id"])
+        if project_dict.get("id") in currently_syncing:
+            currently_syncing.remove(project_dict["id"])
 
     return logging.info(f"Successfuly synced {project_name}") if project_name else logging.info("Successfuly synced persons")

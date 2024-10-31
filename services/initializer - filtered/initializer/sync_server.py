@@ -95,12 +95,6 @@ class KitsuInitializer:
             project_name = ""
         )
 
-        # projects = gazu.project.all_open_projects()
-
-        # for project in projects:
-        #     if project['name'] == 'VDFY' or project['name'] == 'RND01':
-        #         logging.info(f"Syncing {project['name']}")
-        #         create_project(self, project['id'])
         full_sync(self, "5716ebe5-22f2-4278-8271-8241762d89db")
                 
         Listener(self)

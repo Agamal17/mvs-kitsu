@@ -92,7 +92,7 @@ class KitsuInitializer:
         # To Sync Persons
         ayon_api.post(
             f"{self.entrypoint}/sync",
-            project = ""
+            project_name = ""
         )
 
         projects = gazu.project.all_open_projects()
