@@ -1,3 +1,4 @@
+from nxtools import logging
 import re
 import unicodedata
 from typing import Any
@@ -182,9 +183,6 @@ async def create_folder(
     # ensure name is correctly formatted
     folder = None
     try:
-        if name:
-            name = to_entity_name(name)
-
         folder = FolderEntity(
             project_name=project_name,
             payload=dict(kwargs, name=name),
@@ -215,6 +213,7 @@ async def create_folder(
             folder = await FolderEntity.load(project_name, res)
             folder.data['kitsuId'] = kwargs['data']['kitsuId']
             await folder.save()
+
     return folder
 
 
@@ -225,26 +224,17 @@ async def update_folder(
     **kwargs,
 ) -> bool:
     folder = await FolderEntity.load(project_name, folder_id)
-    changed = False
 
-    payload: dict[str, Any] = {**kwargs, **create_name_and_label(name)}
-
-    for key in ["name", "label"]:
-        if key in payload and getattr(folder, key) != payload[key]:
-            setattr(folder, key, payload[key])
-            changed = True
+    payload: dict[str, Any] = {**kwargs}
+    folder.name = name
 
     for key, value in payload["attrib"].items():
         if getattr(folder.attrib, key) != value:
             setattr(folder.attrib, key, value)
             if key not in folder.own_attrib:
                 folder.own_attrib.append(key)
-            changed = True
 
-    if changed:
-        await folder.save()
-
-    return changed
+    await folder.save()
 
 
 async def create_task(

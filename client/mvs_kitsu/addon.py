@@ -3,11 +3,12 @@
 import os
 import sys
 
-from ayon_core.modules import (
+from ayon_core.addon import (
     AYONAddon,
     IPluginPaths,
     ITrayAction,
 )
+from .version import __version__
 
 KITSU_ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,6 +18,7 @@ class KitsuAddon(AYONAddon, IPluginPaths, ITrayAction):
 
     label = "Kitsu Connect"
     name = "kitsu"
+    version = __version__
 
     def initialize(self, settings):
         """Initialization of module."""

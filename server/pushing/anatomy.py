@@ -48,16 +48,12 @@ async def parse_task_types(
 
     result: list[TaskType] = []
     for kitsu_task_type in task_status_response:
-        name_slug = kitsu_task_type["name"].lower()
-
-        short_name = kitsu_task_type.get("short_name")
-        if not short_name:
-            short_name = name_slug.replace("_", "")[:3]
-
+        name = kitsu_task_type["name"]
+        short_name = kitsu_task_type["short_name"]
         result.append(
             TaskType(
-                name=kitsu_task_type["name"],
-                shortName=short_name,
+                name=short_name,
+                shortName=name,
             )
         )
     if not result:

@@ -27,22 +27,17 @@ class UpdateZOU:
         else:
             return None
 
-    def create_shot(self, project, ep_name="", seq_name="", sh_name="", task_names=None, data={}):
-
-        if self.production_type == "tvshow":
-            episode = gazu.shot.get_episode_by_name(project, ep_name)
-            if episode is None:
-                episode = gazu.shot.new_episode(project, name=ep_name)
-        else:
-            episode = None
-
-        sequence = gazu.shot.get_sequence_by_name(project, seq_name, episode=episode)
+    def create_shot(self, project, seq_name="", sh_name="", task_names=None, data={}):
+        sequence = gazu.shot.get_sequence_by_name(project, seq_name)
         if sequence is None:
-            sequence = gazu.shot.new_sequence(project, name=seq_name, episode=episode)
+            sequence = gazu.shot.new_sequence(project, name=seq_name)
 
         shot = gazu.shot.get_shot_by_name(sequence, sh_name)
         if shot is None:
-            # shot = gazu.shot.new_shot(project, sequence, sh_name, frame_in=1001, frame_out=1100, data=data)
+            if len(seq_name.split("_")) == 3:
+                ep_name = seq_name.split("_")[0]
+                data['episode'] = f"EP{ep_name[3:]}"
+
             shot = gazu.shot.new_shot(project,
                                       sequence,
                                       sh_name,
@@ -66,10 +61,6 @@ class UpdateZOU:
         return shot
 
     def upload_preview(self, data, main_preview=False):
-        with open(r"C:\Users\agamal\desktop\test.txt", "a") as f:
-                f.write("preview")
-
-        ep_name = data.get('ep_name')
         seq_name = data.get('seq_name')
         sh_name = data.get('sh_name')
         task_name = data.get('task_name')
@@ -77,14 +68,7 @@ class UpdateZOU:
         comment_text = data.get('comment')
         status_name = data.get('status', 'wfa')
 
-        if self.production_type == "tvshow":
-            episode = gazu.shot.get_episode_by_name(self.project, ep_name)
-            if episode is None:
-                return
-        else:
-            episode = None
-
-        sequence = gazu.shot.get_sequence_by_name(self.project, seq_name, episode=episode)
+        sequence = gazu.shot.get_sequence_by_name(self.project, seq_name)
         if sequence is None:
             return
 
@@ -101,13 +85,13 @@ class UpdateZOU:
             task = gazu.task.new_task(shot, task_type)
         status = gazu.task.get_task_status_by_short_name(status_name)
         comment = gazu.task.add_comment(task, status, comment_text)
+
         preview_file = gazu.task.add_preview(task, comment, path)
 
         if main_preview:
             gazu.task.set_main_preview(preview_file)
 
     def add_comment(self, data):
-        ep_name = data.get('ep_name')
         seq_name = data.get('seq_name')
         sh_name = data.get('sh_name')
         asset_name = data.get('asset_name')
@@ -117,14 +101,7 @@ class UpdateZOU:
         status_name = data.get('status', 'wfa')
 
         # get shots
-        if self.production_type == "tvshow":
-            episode = gazu.shot.get_episode_by_name(self.project, ep_name)
-            if episode is None:
-                return
-        else:
-            episode = None
-
-        sequence = gazu.shot.get_sequence_by_name(self.project, seq_name, episode=episode)
+        sequence = gazu.shot.get_sequence_by_name(self.project, seq_name)
         shot = None
         if sequence:
             shot = gazu.shot.get_shot_by_name(sequence, sh_name)

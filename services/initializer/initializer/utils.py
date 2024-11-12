@@ -169,19 +169,18 @@ def preprocess_task(
     task_types: dict[str, str | list[str]] = {},
     statuses: dict[str, str] = {},
 ) -> dict[str, str | list[str]]:
-
     def get_task_types(project_id: str):
         raw_task_types = gazu.task.all_task_types_for_project(project_id)
         kitsu_task_types = {}
         for task_type in raw_task_types:
-            kitsu_task_types[task_type["id"]] = task_type["name"]
+            kitsu_task_types[task_type["id"]] = {"name": task_type["name"], "short_name": task_type["short_name"]}
         return kitsu_task_types
 
     def get_statuses():
         raw_statuses = gazu.task.all_task_statuses()
         kitsu_statuses = {}
         for status in raw_statuses:
-            kitsu_statuses[status["id"]] = status["short_name"]
+            kitsu_statuses[status["id"]] = {"name": status["name"], "short_name": status["short_name"]}
         return kitsu_statuses
 
     if not task_types:
@@ -191,13 +190,13 @@ def preprocess_task(
         statuses = get_statuses()
 
     if "task_type_id" in task and task["task_type_id"] in task_types:
-        task["task_type_name"] = task_types[task["task_type_id"]]
+        task["task_type"] = task_types[task["task_type_id"]]
 
     if "task_status_id" in task and task["task_status_id"] in statuses:
-        task["task_status_name"] = statuses[task["task_status_id"]]
+        task["task_status"] = statuses[task["task_status_id"]]
 
-    if "name" in task and "task_type_name" in task and task["name"] == "main":
-        task["name"] = task["task_type_name"].lower()
+    if "name" in task and "task_type" in task and task["name"] == "main":
+        task["name"] = task["task_type"]["name"].lower()
 
     # Match the assigned ayon user with the assigned kitsu email
     ayon_users = {

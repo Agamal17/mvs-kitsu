@@ -30,13 +30,13 @@ async def preprocess_task(
     statuses = {},
 ):
     if "task_type_id" in task and task["task_type_id"] in task_types:
-        task["task_type_name"] = task_types[task["task_type_id"]]
+        task["task_type"] = task_types[task["task_type_id"]]
 
     if "task_status_id" in task and task["task_status_id"] in statuses:
-        task["task_status_name"] = statuses[task["task_status_id"]]
+        task["task_status"] = statuses[task["task_status_id"]]
 
-    if "name" in task and "task_type_name" in task and task["name"] == "main":
-        task["name"] = task["task_type_name"].lower()
+    if "name" in task and "task_type" in task and task["name"] == "main":
+        task["name"] = task["task_type"]['name'].lower()
 
     # Match the assigned ayon user with the assigned kitsu email
 
@@ -75,6 +75,8 @@ async def sync_project(
         except:
             pass
 
+        project = await addon.kitsu.get(f'/data/projects/{project_dict["id"]}')
+
         raw_asset_types = await addon.kitsu.get(f'/data/projects/{project_dict["id"]}/asset-types')
         asset_types = {}
         for asset_type in raw_asset_types:
@@ -83,12 +85,12 @@ async def sync_project(
         raw_statuses = await addon.kitsu.get(f'/data/task-status')
         task_statuses = {}
         for status in raw_statuses:
-            task_statuses[status["id"]] = status["short_name"]
+            task_statuses[status["id"]] = {"name": status["name"], "short_name": status["short_name"]}
 
         raw_task_types = await addon.kitsu.get(f'/data/projects/{project_dict["id"]}/task-types')
         task_types = {}
         for task_type in raw_task_types:
-            task_types[task_type["id"]] = task_type["name"]
+            task_types[task_type["id"]] = {"name": task_type["name"], "short_name": task_type["short_name"]}
 
         episodes = await addon.kitsu.get(f'/data/projects/{project_dict["id"]}/episodes')
         sequences = await addon.kitsu.get(f'/data/projects/{project_dict["id"]}/sequences')
@@ -118,7 +120,10 @@ async def sync_project(
         for record in raw_assets:
             assets.append(preprocess_asset(record, asset_types))
 
-        entities = assets + episodes + sequences + shots + edits + concepts + tasks
+        entities = [project] + assets + episodes + sequences + shots + edits + concepts + tasks
+        logging.warning(assets)
+        logging.warning(sequences)
+        logging.warning(shots)
 
     payload = PushEntitiesRequestModel(project_name = project_name, entities = entities)
 

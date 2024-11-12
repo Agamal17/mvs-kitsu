@@ -326,6 +326,7 @@ async def sync_folder(
             # Calculate the end-frame
             data["frame_out"] = calculate_end_frame(entity_dict, parent_folder)
 
+            logging.info(f"Creating folder {entity_dict['name']}")
             target_folder = await create_folder(
                 project_name=project.name,
                 attrib=await parse_attrib(data),
@@ -354,14 +355,16 @@ async def sync_folder(
 
 async def ensure_task_type(
         project: "ProjectEntity",
-        task_type_name: str,
+        task_type: dict,
 ) -> bool:
     """#TODO: kitsu listener for new task types would be preferable"""
-    if task_type_name.lower() not in [task_type["name"].lower() for task_type in project.task_types]:
+
+    if task_type["name"].lower() not in [project_task_type["shortName"].lower() for project_task_type in project.task_types]:
         project.task_types.append(
             {
-                "name": task_type_name,
-                "short_name": task_type_name[:4],
+                "name": task_type["short_name"],
+                "shortName": task_type['name'],
+                "icon": "task_alt"
             }
         )
         await project.save()
@@ -371,15 +374,15 @@ async def ensure_task_type(
 
 async def ensure_task_status(
         project: "ProjectEntity",
-        task_status_name: str,
+        task_status: dict,
 ) -> bool:
     """#TODO: kitsu listener for new task statuses would be preferable"""
 
-    if task_status_name not in [status["name"] for status in project.statuses]:
+    if task_status['name'] not in [status["shortName"] for status in project.statuses]:
         project.statuses.append(
             {
-                "name": task_status_name,
-                "short_name": task_status_name[:4],
+                "name": task_status['short_name'],
+                "shortName": task_status['name'],
             }
         )
         await project.save()
@@ -395,11 +398,12 @@ async def sync_task(
         existing_folders: dict[str, Any],
         entity_dict: "EntityDict",
 ):
-    if "task_status_name" in entity_dict:
-        await ensure_task_status(project, entity_dict["task_status_name"])
+    if "task_status" in entity_dict:
+        await ensure_task_status(project, entity_dict["task_status"])
 
-    if "task_type_name" in entity_dict:
-        await ensure_task_type(project, entity_dict["task_type_name"])
+    if "task_type" in entity_dict:
+        await ensure_task_type(project, entity_dict["task_type"])
+
     else:
         return
 
@@ -421,14 +425,15 @@ async def sync_task(
             if parent_folder:
                 parent_id = parent_folder.id
             else:
-                # The new task type haven't bin implemented in Ayon yet
+                logging.info("Did not find parent folder")
+                # The new task type haven't been implemented in Ayon yet
                 return
 
         target_task = await create_task(
             project_name=project.name,
             folder_id=parent_id,
-            status=entity_dict["task_status_name"],
-            task_type=entity_dict["task_type_name"],
+            status=entity_dict["task_status"]["short_name"],
+            task_type=entity_dict["task_type"]["short_name"],
             name=entity_dict["name"],
             data={"kitsuId": entity_dict["id"]},
             assignees=entity_dict["assignees"],
@@ -441,20 +446,19 @@ async def sync_task(
             task_id=target_task.id,
             name=entity_dict.get("name", target_task.name),
             assignees=entity_dict.get("assignees", target_task.assignees),
-            status=entity_dict.get("task_status_name", target_task.status),
-            task_type=entity_dict.get("task_type_name", target_task.task_type),
+            status=entity_dict['task_status'].get("short_name", target_task.status),
+            task_type=entity_dict['task_type'].get("short_name", target_task.task_type),
         )
         if changed:
             existing_tasks[entity_dict["id"]] = target_task.id
 
 async def sync_project(
     addon: "KitsuAddon",
-    user: "UserEntity",
     project: "ProjectEntity",
     entity_dict: "EntityDict",
 ):
     await addon.ensure_kitsu()
-    anatomy = await get_kitsu_project_anatomy(addon, entity_dict['project_id'])
+    anatomy = await get_kitsu_project_anatomy(addon, entity_dict['id'])
     anatomy_data = anatomy_to_project_data(anatomy)
 
     attr_whitelist=["task_types", "statuses"]
@@ -463,8 +467,12 @@ async def sync_project(
 
     for key in attr_whitelist:
         if key in anatomy_data and getattr(project, key) != anatomy_data[key]:
+            for v in anatomy_data[key]:
+                del v['original_name']
+
             setattr(project, key, anatomy_data[key])
             changed = True
+
     if "attrib" in anatomy_data:
         for key, value in anatomy_data["attrib"].items():
             if getattr(project.attrib, key) != value:
@@ -472,6 +480,7 @@ async def sync_project(
                 if key not in project.own_attrib:
                     project.own_attrib.append(key)
                 changed = True
+
     if changed:
         await project.save()
 
@@ -497,31 +506,27 @@ async def push_entities(
     tasks = {}
     users = {}
 
-    settings = await addon.get_studio_settings()
     for entity_dict in payload.entities:
         # required fields
         assert "type" in entity_dict
         assert "id" in entity_dict
 
+        logging.info(
+            f"entity_dict['type'] = {entity_dict['type']}"
+        )
         if entity_dict["type"] not in get_args(KitsuEntityType):
             continue
 
         if entity_dict["type"] == "Project":
-            await sync_project(addon, user, project, entity_dict)
+            await sync_project(addon, project, entity_dict) # TODO: NOT WORKING
 
         elif entity_dict["type"] == "Person":
-            if settings.sync_settings.sync_users.enabled:
-                # await create_access_group(
-                #     addon,
-                #     user,
-                #     entity_dict,
-                # )
-                await sync_person(
-                    addon,
-                    user,
-                    users,
-                    entity_dict,
-                )
+            await sync_person(
+                addon,
+                user,
+                users,
+                entity_dict,
+            )
 
         elif entity_dict["type"] != "Task":
             await sync_folder(
