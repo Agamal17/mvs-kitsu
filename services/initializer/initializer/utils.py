@@ -211,6 +211,9 @@ def preprocess_task(
     return task
 
 def create_or_update_task(parent: "KitsuInitializer", data: dict[str, str]):
+    if not data.get("project_id"):
+        data['project_id'] = gazu.task.get_task(data["task_id"])["project_id"]
+
     project_name = gazu.project.get_project(data["project_id"])['name']
 
     entity = gazu.task.get_task(data["task_id"])
