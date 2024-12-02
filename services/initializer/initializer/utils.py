@@ -180,7 +180,7 @@ def preprocess_task(
         raw_statuses = gazu.task.all_task_statuses()
         kitsu_statuses = {}
         for status in raw_statuses:
-            kitsu_statuses[status["id"]] = {"name": status["name"], "short_name": status["short_name"]}
+            kitsu_statuses[status["id"]] = {"name": status["name"], "short_name": status["short_name"], "color": status["color"]}
         return kitsu_statuses
 
     if not task_types:

@@ -8,7 +8,7 @@ class IntegrateKitsuReview(pyblish.api.InstancePlugin):
 
     order = pyblish.api.IntegratorOrder + 0.01
     label = "Kitsu Review"
-    families = ["render", "image", "online", "plate", "kitsu"]
+    families = ["render", "image", "online", "kitsu"]
     optional = True
 
     def process(self, instance):
@@ -32,9 +32,13 @@ class IntegrateKitsuReview(pyblish.api.InstancePlugin):
             if "kitsureview" not in representation.get("tags", []):
                 continue
             review_path = representation.get("published_path")
-            self.log.debug("Found review at: {}".format(review_path))
+            self.log.debug(f"Found review at: {review_path}")
 
             gazu.task.add_preview(
-                task_id, comment_id, review_path, normalize_movie=True
+                task=task_id,
+                comment=comment_id,
+                preview_file_path=review_path,
+                normalize_movie=True,
+                revision=instance.data["version"],
             )
             self.log.info("Review upload on comment")

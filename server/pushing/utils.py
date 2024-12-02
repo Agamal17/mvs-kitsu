@@ -48,8 +48,6 @@ async def get_folder_by_kitsu_id(
 
     return await FolderEntity.load(project_name, folder_id)
 
-    return None
-
 def remove_accents(input_str: str) -> str:
     nfkd_form = unicodedata.normalize("NFKD", input_str)
     return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
@@ -181,7 +179,6 @@ async def create_folder(
     api.folders.folders.py?
     """
     # ensure name is correctly formatted
-    folder = None
     try:
         folder = FolderEntity(
             project_name=project_name,
@@ -189,6 +186,9 @@ async def create_folder(
         )
         await folder.save()
     except Exception as e:
+        logging.warning(e)
+        logging.warning(kwargs)
+
         if name == "Sequences":
             res = await Postgres.fetch(
                 f"""
@@ -242,7 +242,7 @@ async def create_task(
     name: str,
     **kwargs,
 ) -> TaskEntity:
-    payload = {**kwargs, **create_name_and_label(name)}
+    payload = {**kwargs, "name": name}
     task = TaskEntity(
         project_name=project_name,
         payload=payload,
@@ -262,7 +262,7 @@ async def update_task(
     task = await TaskEntity.load(project_name, task_id)
     changed = False
 
-    payload = {**kwargs, **create_name_and_label(name)}
+    payload = {**kwargs, "name": name}
 
     # keys that can be updated
     for key in ["name", "label", "status", "task_type", "assignees"]:

@@ -72,9 +72,12 @@ class UpdateZOU:
         if sequence is None:
             return
 
-        shot = gazu.shot.get_shot_by_name(sequence, sh_name)
-        if shot is None:
-            return
+        if sh_name:
+            shot = gazu.shot.get_shot_by_name(sequence, sh_name)
+            if shot is None:
+                return
+        else:
+            shot = sequence
 
         task_type = gazu.task.get_task_type_by_name(task_name)
         if task_type is None:
@@ -157,6 +160,12 @@ class UpdateZOU:
             gazu.shot.update_shot_data(asset, {col_name: value})
         else:
             gazu.asset.update_asset_data(asset, {col_name: value})
+
+    def add_task_to_sequence(self, project, seq_name, task_name):
+        sequence = gazu.shot.get_sequence_by_name(project, seq_name)
+        task_type = gazu.task.get_task_type_by_name(task_name)
+        if task_type is not None:
+            task = gazu.task.new_task(sequence, task_type)
 
 if __name__ == "__main__":
     zou = UpdateZOU("agamal")

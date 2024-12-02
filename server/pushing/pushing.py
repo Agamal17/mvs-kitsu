@@ -383,6 +383,7 @@ async def ensure_task_status(
             {
                 "name": task_status['short_name'],
                 "shortName": task_status['name'],
+                "color": task_status['color'],
             }
         )
         await project.save()
@@ -466,12 +467,21 @@ async def sync_project(
     project = await ProjectEntity.load(project.name)
 
     for key in attr_whitelist:
-        if key in anatomy_data and getattr(project, key) != anatomy_data[key]:
-            for v in anatomy_data[key]:
-                del v['original_name']
+        if key in anatomy_data:
+            for value in anatomy_data[key]:
+                if value['name'] not in [x['name'] for x in getattr(project, key)]:
+                    setattr(project, key, getattr(project, key) + [value])
+            await project.save()
 
-            setattr(project, key, anatomy_data[key])
-            changed = True
+            original_list = getattr(project, key)
+            for value in getattr(project, key):
+                if value['name'] not in [x['name'] for x in anatomy_data[key]]:
+                    setattr(project, key, [x for x in getattr(project, key) if x['name'] != value['name']])
+            try:
+                await project.save()
+            except Exception as e:
+                setattr(project, key, original_list)
+                logging.warning(e)
 
     if "attrib" in anatomy_data:
         for key, value in anatomy_data["attrib"].items():
@@ -479,9 +489,6 @@ async def sync_project(
                 setattr(project.attrib, key, value)
                 if key not in project.own_attrib:
                     project.own_attrib.append(key)
-                changed = True
-
-    if changed:
         await project.save()
 
 
@@ -518,7 +525,7 @@ async def push_entities(
             continue
 
         if entity_dict["type"] == "Project":
-            await sync_project(addon, project, entity_dict) # TODO: NOT WORKING
+            await sync_project(addon, project, entity_dict)
 
         elif entity_dict["type"] == "Person":
             await sync_person(

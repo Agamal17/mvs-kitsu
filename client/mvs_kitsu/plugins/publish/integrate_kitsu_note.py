@@ -49,6 +49,16 @@ class IntegrateKitsuNote(pyblish.api.ContextPlugin):
         return re.sub(pattern, replace_missing_key, template)
 
     def process(self, context):
+        # Backwards compatibility for wront key
+        if "product_type_requirements" in self.status_change_conditions:
+            family_requirements = self.status_change_conditions[
+                "product_type_requirements"
+            ]
+        else:
+            family_requirements = self.status_change_conditions[
+                "family_requirements"
+            ]
+
         for instance in context:
             # Check if instance is a review by checking its family
             # Allow a match to primary family or any of families
@@ -69,9 +79,9 @@ class IntegrateKitsuNote(pyblish.api.ContextPlugin):
 
             # Check if any status condition is not met
             allow_status_change = True
-            for status_cond in self.status_change_conditions[
-                "status_conditions"
-            ]:
+            for status_cond in (
+                    self.status_change_conditions["status_conditions"]
+            ):
                 condition = status_cond["condition"] == "equal"
                 match = status_cond["short_name"].upper() == shortname
                 if match and not condition or condition and not match:
@@ -87,9 +97,7 @@ class IntegrateKitsuNote(pyblish.api.ContextPlugin):
                 }
 
                 # Check if any family requirement is met
-                for family_requirement in self.status_change_conditions[
-                    "family_requirements"
-                ]:
+                for family_requirement in family_requirements:
                     condition = family_requirement["condition"] == "equal"
 
                     for family in families:
@@ -108,11 +116,11 @@ class IntegrateKitsuNote(pyblish.api.ContextPlugin):
                 )
                 if kitsu_status:
                     note_status = kitsu_status
-                    self.log.info("Note Kitsu status: {}".format(note_status))
+                    self.log.info(f"Note Kitsu status: {note_status}")
                 else:
                     self.log.info(
-                        "Cannot find {} status. The status will not be "
-                        "changed!".format(self.note_status_shortname)
+                        f"Cannot find {self.note_status_shortname} status."
+                        " The status will not be changed!"
                     )
 
             # Get comment text body
@@ -123,12 +131,10 @@ class IntegrateKitsuNote(pyblish.api.ContextPlugin):
             if not publish_comment:
                 self.log.debug("Comment is not set.")
             else:
-                self.log.debug("Comment is `{}`".format(publish_comment))
+                self.log.debug(f"Comment is `{publish_comment}`")
 
             # Add comment to kitsu task
-            self.log.debug(
-                "Add new note in tasks id {}".format(kitsu_task["id"])
-            )
+            self.log.debug(f'Add new note in tasks id {kitsu_task["id"]}')
             kitsu_comment = gazu.task.add_comment(
                 kitsu_task, note_status, comment=publish_comment
             )

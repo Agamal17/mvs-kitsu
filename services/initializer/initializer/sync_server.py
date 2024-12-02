@@ -27,7 +27,7 @@ class KitsuInitializer:
         #
 
         try:
-            ayon_api.init_service(addon_name='kitsu', addon_version='1.0.0', service_name='kitsu-initializer')
+            ayon_api.init_service(addon_name='kitsu', addon_version='1.2.0', service_name='kitsu-initializer')
             connected = True
         except Exception:
             log_traceback()

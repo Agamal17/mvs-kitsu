@@ -85,7 +85,7 @@ async def sync_project(
         raw_statuses = await addon.kitsu.get(f'/data/task-status')
         task_statuses = {}
         for status in raw_statuses:
-            task_statuses[status["id"]] = {"name": status["name"], "short_name": status["short_name"]}
+            task_statuses[status["id"]] = {"name": status["name"], "short_name": status["short_name"], "color": status["color"]}
 
         raw_task_types = await addon.kitsu.get(f'/data/projects/{project_dict["id"]}/task-types')
         task_types = {}
@@ -121,9 +121,6 @@ async def sync_project(
             assets.append(preprocess_asset(record, asset_types))
 
         entities = [project] + assets + episodes + sequences + shots + edits + concepts + tasks
-        logging.warning(assets)
-        logging.warning(sequences)
-        logging.warning(shots)
 
     payload = PushEntitiesRequestModel(project_name = project_name, entities = entities)
 
