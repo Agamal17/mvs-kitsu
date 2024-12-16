@@ -22,6 +22,8 @@ from .utils import (
     create_task, update_task, delete_task,
     calculate_end_frame,
 )
+from ayon_server.settings.anatomy.statuses import Status
+from ayon_server.settings.anatomy.task_types import TaskType
 
 if TYPE_CHECKING:
     from .. import KitsuAddon
@@ -360,12 +362,9 @@ async def ensure_task_type(
     """#TODO: kitsu listener for new task types would be preferable"""
 
     if task_type["name"].lower() not in [project_task_type["shortName"].lower() for project_task_type in project.task_types]:
+        task_type = TaskType(name=task_type["short_name"], shortName=task_type["name"])
         project.task_types.append(
-            {
-                "name": task_type["short_name"],
-                "shortName": task_type['name'],
-                "icon": "task_alt"
-            }
+            task_type.dict()
         )
         await project.save()
         return True
@@ -379,12 +378,9 @@ async def ensure_task_status(
     """#TODO: kitsu listener for new task statuses would be preferable"""
 
     if task_status['name'] not in [status["shortName"] for status in project.statuses]:
+        task_status = Status(name=task_status['short_name'], shortName=task_status['name'], color=task_status['color'])
         project.statuses.append(
-            {
-                "name": task_status['short_name'],
-                "shortName": task_status['name'],
-                "color": task_status['color'],
-            }
+            task_status.dict()
         )
         await project.save()
         return True

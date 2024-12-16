@@ -23,6 +23,7 @@ import gazu
 import ayon_api
 import threading
 
+
 class Listener:
     """Host Kitsu listener."""
 
@@ -129,6 +130,7 @@ class Listener:
             gazu.events.add_listener(
                 self.event_client, "concept:delete", lambda data: delete_concept(self.addon, data)
             )
+
         except:
             pass
 
@@ -155,4 +157,3 @@ class Listener:
         """Start listening for events."""
 
         gazu.events.run_client(self.event_client)
-

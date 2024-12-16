@@ -54,9 +54,9 @@ class Kitsu:
             except httpx.HTTPError as e:
                 status_code = response.status_code
                 if status_code == 401:
-                    raise KitsuLoginException(
-                        "Could not login to Kitsu (invalid token)"
-                    ) from e
+                    await self.logout()
+                    await self.login()
+
                 else:
                     raise KitsuLoginException(
                         "Could not login to Kitsu (server error)"
