@@ -1,3 +1,5 @@
+from nxtools import logging
+
 from ayon_server.addons import BaseServerAddon
 from .settings import KitsuSettings, DEFAULT_VALUES
 from .pushing.frontend_methods import sync_project, syncProjectModel
@@ -35,15 +37,15 @@ class KitsuAddon(BaseServerAddon):
         self.add_endpoint("/remove", self.delete, method="POST")
 
     async def sync(
-        self,
-        user: CurrentUser,
-        payload: syncProjectModel
+            self,
+            user: CurrentUser,
+            payload: syncProjectModel
     ):
         await self.ensure_kitsu()
         await sync_project(self, user, payload.project_name, payload.project)
 
     async def fetch(
-        self
+            self
     ):
         await self.ensure_kitsu()
         kitsu_projects_response = await self.kitsu.get("data/projects/open")
@@ -68,6 +70,7 @@ class KitsuAddon(BaseServerAddon):
     ):
         if not user.is_manager:
             raise ForbiddenException("Only managers can sync Kitsu projects")
+
         await push_entities(
             self,
             user=user,
@@ -75,17 +78,16 @@ class KitsuAddon(BaseServerAddon):
         )
 
     async def delete(
-        self,
-        user: CurrentUser,
-        payload: deleteEntitiesRequestModel
+            self,
+            user: CurrentUser,
+            payload: deleteEntitiesRequestModel
     ):
         await self.ensure_kitsu()
         await delete_entities(
             self,
-            user = user,
-            payload = payload
+            user=user,
+            payload=payload
         )
-
 
     async def ensure_kitsu(self):
         if self.kitsu is not None:

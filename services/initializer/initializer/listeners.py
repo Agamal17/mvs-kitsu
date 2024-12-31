@@ -41,9 +41,7 @@ class Listener:
         email_sercret = self.settings.get("login_email")
         password_secret = self.settings.get("login_password")
         self.kitsu_login_email = ayon_api.get_secret(email_sercret)["value"]
-        self.kitsu_login_password = ayon_api.get_secret(password_secret)[
-            "value"
-        ]
+        self.kitsu_login_password = ayon_api.get_secret(password_secret)["value"]
 
         gazu.client.set_host(self.kitsu_server_url)
         gazu.set_host(self.kitsu_server_url)

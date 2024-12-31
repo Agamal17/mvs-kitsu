@@ -217,22 +217,21 @@ async def generate_user_settings(
 
 
 async def sync_person(
-    addon: "KitsuAddon",
-    user: "UserEntity",
-    existing_users: dict[str, Any],
-    entity_dict: "EntityDict",
+        addon: "KitsuAddon",
+        user: "UserEntity",
+        existing_users: dict[str, Any],
+        entity_dict: "EntityDict",
 ):
-
     username = entity_dict['desktop_login']
     entity_id = entity_dict['id']
 
     payload = {
-        "name": username,
-        "attrib": {
-            "fullName": entity_dict.get("full_name", ""),
-            "email": entity_dict.get("email", ""),
-        },
-    } | await generate_user_settings(
+                  "name": username,
+                  "attrib": {
+                      "fullName": entity_dict.get("full_name", ""),
+                      "email": entity_dict.get("email", ""),
+                  },
+              } | await generate_user_settings(
         addon,
         entity_dict,
     )
@@ -361,7 +360,8 @@ async def ensure_task_type(
 ) -> bool:
     """#TODO: kitsu listener for new task types would be preferable"""
 
-    if task_type["name"].lower() not in [project_task_type["shortName"].lower() for project_task_type in project.task_types]:
+    if task_type["name"].lower() not in [project_task_type["shortName"].lower() for project_task_type in
+                                         project.task_types]:
         task_type = TaskType(name=task_type["short_name"], shortName=task_type["name"])
         project.task_types.append(
             task_type.dict()
@@ -449,16 +449,18 @@ async def sync_task(
         if changed:
             existing_tasks[entity_dict["id"]] = target_task.id
 
+
 async def sync_project(
-    addon: "KitsuAddon",
-    project: "ProjectEntity",
-    entity_dict: "EntityDict",
+        addon: "KitsuAddon",
+        project: "ProjectEntity",
+        entity_dict: "EntityDict",
 ):
     await addon.ensure_kitsu()
     anatomy = await get_kitsu_project_anatomy(addon, entity_dict['id'])
     anatomy_data = anatomy_to_project_data(anatomy)
+    logging.warning(anatomy_data)
 
-    attr_whitelist=["task_types", "statuses"]
+    attr_whitelist = ["task_types", "statuses"]
 
     project = await ProjectEntity.load(project.name)
 

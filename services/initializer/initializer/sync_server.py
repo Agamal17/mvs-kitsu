@@ -1,7 +1,7 @@
 import time
 import sys
 import ayon_api
-import gazu
+from gazu_wrapper import GazuWrapper as gazu
 
 from .fullsync import full_sync
 from .listeners import Listener
@@ -78,14 +78,7 @@ class KitsuInitializer:
         #
         # Connect to Kitsu
         #
-        gazu.client.set_host(self.kitsu_server_url)
-        gazu.set_host(self.kitsu_server_url)
-        if not gazu.client.host_is_valid():
-            raise KitsuServerError(
-                f"Kitsu server `{self.kitsu_server_url}` is not valid"
-            )
-
-        gazu.log_in(self.kitsu_login_email, self.kitsu_login_password)
+        gazu.login(self.kitsu_server_url, self.kitsu_login_email, self.kitsu_login_password)
 
         logging.info("KitsuInitializer started")
 

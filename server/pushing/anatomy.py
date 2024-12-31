@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 async def parse_task_types(
-    addon: "KitsuAddon", kitsu_project_id: str
+        addon: "KitsuAddon", kitsu_project_id: str
 ) -> list[TaskType]:
     """
 
@@ -161,8 +161,8 @@ async def get_primary_anatomy_preset() -> Anatomy:
 
 
 async def get_kitsu_project_anatomy(
-    addon: "KitsuAddon",
-    kitsu_project_id: str,
+        addon: "KitsuAddon",
+        kitsu_project_id: str,
 ) -> Anatomy:
     kitsu_project_response = await addon.kitsu.get(f"data/projects/{kitsu_project_id}/")
     kitsu_project = kitsu_project_response
@@ -184,5 +184,8 @@ async def get_kitsu_project_anatomy(
 
     anatomy_dict["statuses"] = statuses
     anatomy_dict["task_types"] = task_types
+    
+    if kitsu_project.get("code"):
+        anatomy_dict["code"] = kitsu_project["code"]
 
     return Anatomy(**anatomy_dict)

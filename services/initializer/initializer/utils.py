@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 import ayon_api
-import gazu
+from gazu_wrapper import GazuWrapper as gazu
 from nxtools import logging
 
 from .fullsync import full_sync
