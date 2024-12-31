@@ -1,7 +1,7 @@
 import time
 import sys
 import ayon_api
-from gazu_wrapper import GazuWrapper as gazu
+from .gazu_wrapper import GazuWrapper as gazu
 
 from .fullsync import full_sync
 from .listeners import Listener

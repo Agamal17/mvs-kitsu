@@ -1,4 +1,4 @@
-from gazu_wrapper import GazuWrapper as gazu
+from .gazu_wrapper import GazuWrapper as gazu
 import ayon_api
 from nxtools import logging
 from typing import TYPE_CHECKING

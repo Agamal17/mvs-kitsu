@@ -1,10 +1,9 @@
 from typing import TYPE_CHECKING
 
 import ayon_api
-from gazu_wrapper import GazuWrapper as gazu
+from .gazu_wrapper import GazuWrapper as gazu
 from nxtools import logging
 
-from .fullsync import full_sync
 if TYPE_CHECKING:
     from .sync_server import KitsuInitializer
 
