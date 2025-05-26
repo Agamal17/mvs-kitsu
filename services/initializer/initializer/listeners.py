@@ -1,3 +1,5 @@
+import time
+
 from .utils import (
     create_or_update_asset,
     create_or_update_concept,
@@ -21,7 +23,22 @@ from .utils import (
 from .fullsync import full_sync
 import gazu
 import ayon_api
-import threading
+import multiprocessing
+
+
+def run_listeners(listener_process, *args):
+    retry_interval = 1
+    while True:
+        gazu_listener_process = multiprocessing.Process(target=listener_process, args=args)
+        gazu_listener_process.start()
+        gazu_listener_process.join(timeout=60 * 60 * 24)
+        if gazu_listener_process.is_alive():
+            gazu_listener_process.terminate()
+            gazu_listener_process.join()
+            time.sleep(retry_interval)
+            retry_interval = min(retry_interval * 2, 3600)
+        else:
+            retry_interval = 1
 
 
 class Listener:
@@ -37,121 +54,127 @@ class Listener:
         """
         self.addon = addon
         self.settings = ayon_api.get_service_addon_settings()
-        self.kitsu_server_url = self.settings.get("server").rstrip("/") + "/api"
         email_sercret = self.settings.get("login_email")
         password_secret = self.settings.get("login_password")
+        self.kitsu_server_url = self.settings.get("server").rstrip("/") + "/api"
         self.kitsu_login_email = ayon_api.get_secret(email_sercret)["value"]
         self.kitsu_login_password = ayon_api.get_secret(password_secret)["value"]
 
-        gazu.client.set_host(self.kitsu_server_url)
-        gazu.set_host(self.kitsu_server_url)
-        gazu.log_in(self.kitsu_login_email, self.kitsu_login_password)
+        listener_process = multiprocessing.Process(target=run_listeners, args=(
+            self.run_gazu_listeners, self.addon, self.kitsu_server_url, self.kitsu_login_email,
+            self.kitsu_login_password
+        )
+                                                   )
+        listener_process.start()
+
+    @staticmethod
+    def run_gazu_listeners(addon, url, login, password):
+        gazu.client.set_host(url)
+        gazu.set_host(url)
+        gazu.log_in(login, password)
+        gazu.refresh_access_token()
 
         gazu.set_event_host(
-            self.kitsu_server_url.replace("api", "socket.io")
+            url.replace("api", "socket.io")
         )
-        self.event_client = gazu.events.init()
+        event_client = gazu.events.init(logger=True, reconnection=False)
 
-        gazu_listener_thread = threading.Thread(target=self.run_gazu_listeners)
-        gazu_listener_thread.start()
-
-    def run_gazu_listeners(self):
         gazu.events.add_listener(
-            self.event_client, "project:new", lambda data: full_sync(self.addon, data)
+            event_client, "project:new", lambda data: full_sync(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "project:update", lambda data: update_project(self.addon, data)
+            event_client, "project:update", lambda data: update_project(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "project:delete", lambda data: delete_project(self.addon, data)
+            event_client, "project:delete", lambda data: delete_project(addon, data)
         )
 
         gazu.events.add_listener(
-            self.event_client, "asset:new", lambda data: create_or_update_asset(self.addon, data)
+            event_client, "asset:new", lambda data: create_or_update_asset(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "asset:update", lambda data: create_or_update_asset(self.addon, data)
+            event_client, "asset:update", lambda data: create_or_update_asset(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "asset:delete", lambda data: delete_asset(self.addon, data)
-        )
-
-        gazu.events.add_listener(
-            self.event_client, "episode:new", lambda data: create_or_update_episode(self.addon, data)
-        )
-        gazu.events.add_listener(
-            self.event_client, "episode:update", lambda data: create_or_update_episode(self.addon, data)
-        )
-        gazu.events.add_listener(
-            self.event_client, "episode:delete", lambda data: delete_episode(self.addon, data)
+            event_client, "asset:delete", lambda data: delete_asset(addon, data)
         )
 
         gazu.events.add_listener(
-            self.event_client, "sequence:new", lambda data: create_or_update_sequence(self.addon, data)
+            event_client, "episode:new", lambda data: create_or_update_episode(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "sequence:update", lambda data: create_or_update_sequence(self.addon, data)
+            event_client, "episode:update", lambda data: create_or_update_episode(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "sequence:delete", lambda data: delete_sequence(self.addon, data)
+            event_client, "episode:delete", lambda data: delete_episode(addon, data)
         )
 
         gazu.events.add_listener(
-            self.event_client, "shot:new", lambda data: create_or_update_shot(self.addon, data)
+            event_client, "sequence:new", lambda data: create_or_update_sequence(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "shot:update", lambda data: create_or_update_shot(self.addon, data)
+            event_client, "sequence:update", lambda data: create_or_update_sequence(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "shot:delete", lambda data: delete_shot(self.addon, data)
+            event_client, "sequence:delete", lambda data: delete_sequence(addon, data)
+        )
+
+        gazu.events.add_listener(
+            event_client, "shot:new", lambda data: create_or_update_shot(addon, data)
+        )
+        gazu.events.add_listener(
+            event_client, "shot:update", lambda data: create_or_update_shot(addon, data)
+        )
+        gazu.events.add_listener(
+            event_client, "shot:delete", lambda data: delete_shot(addon, data)
         )
         try:
             gazu.events.add_listener(
-                self.event_client, "edit:new", lambda data: create_or_update_edit(self.addon, data)
+                event_client, "edit:new", lambda data: create_or_update_edit(addon, data)
             )
             gazu.events.add_listener(
-                self.event_client, "edit:update", lambda data: create_or_update_edit(self.addon, data)
+                event_client, "edit:update", lambda data: create_or_update_edit(addon, data)
             )
             gazu.events.add_listener(
-                self.event_client, "edit:delete", lambda data: delete_edit(self.addon, data)
+                event_client, "edit:delete", lambda data: delete_edit(addon, data)
             )
         except:
             pass
 
         try:
             gazu.events.add_listener(
-                self.event_client, "concept:new", lambda data: create_or_update_concept(self.addon, data)
+                event_client, "concept:new", lambda data: create_or_update_concept(addon, data)
             )
             gazu.events.add_listener(
-                self.event_client, "concept:update", lambda data: create_or_update_concept(self.addon, data)
+                event_client, "concept:update", lambda data: create_or_update_concept(addon, data)
             )
             gazu.events.add_listener(
-                self.event_client, "concept:delete", lambda data: delete_concept(self.addon, data)
+                event_client, "concept:delete", lambda data: delete_concept(addon, data)
             )
 
         except:
             pass
 
         gazu.events.add_listener(
-            self.event_client, "task:new", lambda data: create_or_update_task(self.addon, data)
+            event_client, "task:new", lambda data: create_or_update_task(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "task:update", lambda data: create_or_update_task(self.addon, data)
+            event_client, "task:update", lambda data: create_or_update_task(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "task:delete", lambda data: delete_task(self.addon, data)
+            event_client, "task:delete", lambda data: delete_task(addon, data)
         )
 
         gazu.events.add_listener(
-            self.event_client, "person:new", lambda data: create_or_update_person(self.addon, data)
+            event_client, "person:new", lambda data: create_or_update_person(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "person:update", lambda data: create_or_update_person(self.addon, data)
+            event_client, "person:update", lambda data: create_or_update_person(addon, data)
         )
         gazu.events.add_listener(
-            self.event_client, "person:delete", lambda data: delete_person(self.addon, data)
+            event_client, "person:delete", lambda data: delete_person(addon, data)
         )
 
         """Start listening for events."""
 
-        gazu.events.run_client(self.event_client)
+        gazu.events.run_client(event_client)

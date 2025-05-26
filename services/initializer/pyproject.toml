@@ -1,12 +1,13 @@
 [tool.poetry]
-name = "kitsu-initializer"
+name = "initializer"
 version = "1.1"
+package-mode = false
 description = "Kitsu Integration for Ayon"
 authors = ["Martin Wacker <martin@ynput.io>", "Ahmed Gamal <agamal@mercury.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-gazu = "^0.9.9"
+gazu = "*"
 nxtools = "^1.6"
 ayon-python-api = "1.0.0rc3"
 

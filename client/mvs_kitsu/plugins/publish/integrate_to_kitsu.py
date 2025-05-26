@@ -29,10 +29,8 @@ if os.environ["AYON_HOST_NAME"] == "hiero":
 
             if instance.data['productType'] == 'ref_edit':
                 sequence = instance.data["folderEntity"]["name"]
-                if instance.data['mercury_ref']:
+                if instance.data['upload_preview']:
                     zou.add_task_to_sequence(project, sequence, 'Mercury_Edit')
-                else:
-                    zou.add_task_to_sequence(project, sequence, 'Reference_Edit')
 
             else:
                 shot_name = instance.data["folderEntity"]["name"]

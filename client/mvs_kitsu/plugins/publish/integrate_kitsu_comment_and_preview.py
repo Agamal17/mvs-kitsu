@@ -23,10 +23,8 @@ if os.environ["AYON_HOST_NAME"] == "hiero":
 
             elif instance.data['productType'] == 'ref_edit':
                 self.log.debug(f"add Edit Reference to kitsu")
-                if instance.data['mercury_ref']:
+                if instance.data['upload_preview']:
                     self.add_preview_kitsu(instance.data, creds, 'Mercury_Edit')
-                else:
-                    self.add_preview_kitsu(instance.data, creds, 'Reference_Edit')
 
             elif instance.data['productType'] == 'footage':
                 self.log.debug(f"add footage comment to kitsu")

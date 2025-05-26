@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import gazu
+from ayon_core.lib import get_ffmpeg_tool_path
+import os
+import subprocess
 import pyblish.api
 
 
@@ -33,12 +36,39 @@ class IntegrateKitsuReview(pyblish.api.InstancePlugin):
                 continue
             review_path = representation.get("published_path")
             self.log.debug(f"Found review at: {review_path}")
+            if not review_path:
+                return
 
-            gazu.task.add_preview(
-                task=task_id,
-                comment=comment_id,
-                preview_file_path=review_path,
-                normalize_movie=True,
-                revision=instance.data["version"],
-            )
+            try:
+                gazu.task.add_preview(
+                    task=task_id,
+                    comment=comment_id,
+                    preview_file_path=review_path,
+                    normalize_movie=True,
+                    revision=instance.data["version"],
+                )
+
+            except gazu.exception.TooBigFileException as e:
+                self.log.info("Preview is too large, Compressing File...")
+                ffmpeg_path = get_ffmpeg_tool_path()
+                old_review_path = review_path
+                review_path = f"{os.path.splitext(review_path)[0]}_compressed.mp4"
+                subprocess.run(
+                    [
+                        ffmpeg_path,
+                        "-i", old_review_path,
+                        "-b:v", "50000k",
+                        review_path
+                    ],
+                    check=True
+                    )
+
+                gazu.task.add_preview(
+                    task=task_id,
+                    comment=comment_id,
+                    preview_file_path=review_path,
+                    normalize_movie=True,
+                    revision=instance.data["version"],
+                )
+
             self.log.info("Review upload on comment")

@@ -18,7 +18,7 @@ class KitsuAddon(BaseServerAddon):
     title = "Kitsu"
     version = __version__
     settings_model: Type[KitsuSettings] = KitsuSettings
-    frontend_scopes = {"settings": {}}
+    # frontend_scopes = {"settings": {}}    # Removed UI because user-requested sync lags listener's behaviour and causes issues
     services = {
         "Initializer": {"image": f"agamal17/kitsu-initializer:1.1"}
     }

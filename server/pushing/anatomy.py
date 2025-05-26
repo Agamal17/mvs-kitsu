@@ -107,7 +107,6 @@ async def parse_statuses(addon: "KitsuAddon", kitsu_project_id: str) -> list[Sta
 
     result: list[Status] = []
     kitsu_statuses = task_status_response
-    kitsu_statuses.sort(key=lambda x: not x.get("is_default"))
     for kitsu_status in kitsu_statuses:
         status = Status(
             name=kitsu_status["short_name"],

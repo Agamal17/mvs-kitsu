@@ -1,8 +1,9 @@
 import gazu
 
+
 class UpdateZOU:
 
-    def __init__(self, creds ,project_name=None):
+    def __init__(self, creds, project_name=None):
         self.production_type = None
         self.zou_login(creds)
 
@@ -88,8 +89,41 @@ class UpdateZOU:
             task = gazu.task.new_task(shot, task_type)
         status = gazu.task.get_task_status_by_short_name(status_name)
         comment = gazu.task.add_comment(task, status, comment_text)
+        if not path:
+            return
 
-        preview_file = gazu.task.add_preview(task, comment, path)
+        try:
+            preview_file = gazu.task.add_preview(
+                task,
+                comment,
+                path,
+                normalize_movie=True
+            )
+
+        except gazu.exception.TooBigFileException as e:
+            from ayon_core.lib import get_ffmpeg_tool_path
+            import os
+            import subprocess
+
+            ffmpeg_path = get_ffmpeg_tool_path()
+            old_review_path = path
+            path = f"{os.path.splitext(path)[0]}_compressed.mp4"
+            subprocess.run(
+                [
+                    ffmpeg_path,
+                    "-i", old_review_path,
+                    "-b:v", "50000k",
+                    path
+                ],
+                check=True
+            )
+
+            preview_file = gazu.task.add_preview(
+                task,
+                comment,
+                path,
+                normalize_movie=True
+            )
 
         if main_preview:
             gazu.task.set_main_preview(preview_file)
@@ -167,7 +201,10 @@ class UpdateZOU:
         if task_type is not None:
             task = gazu.task.new_task(sequence, task_type)
 
+
 if __name__ == "__main__":
     zou = UpdateZOU("agamal")
-    data = {'ep_name': 'ep01', 'seq_name': 'hey', 'sh_name': '/Sequences/hey/sh020', 'path': '\\\\st\\Productions\\agamal\\Sequences\\hey\\sh020\\publish\\plate\\plateVideo_1\\v001\\agamal_sh020_plateVideo_1_v001.mp4', 'task_name': 'Conforming', 'comment': '/Sequences/hey/sh020_plateVideo_1'}
-    zou.upload_preview(data, main_preview = True)
+    data = {'ep_name': 'ep01', 'seq_name': 'hey', 'sh_name': '/Sequences/hey/sh020',
+            'path': '\\\\st\\Productions\\agamal\\Sequences\\hey\\sh020\\publish\\plate\\plateVideo_1\\v001\\agamal_sh020_plateVideo_1_v001.mp4',
+            'task_name': 'Conforming', 'comment': '/Sequences/hey/sh020_plateVideo_1'}
+    zou.upload_preview(data, main_preview=True)

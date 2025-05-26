@@ -76,6 +76,7 @@ async def sync_project(
             payload = InitPairingRequest(project_name=project_name, project_code=project_code,
                                          project_id=project_dict["id"])
             await init_pairing(addon, user, payload)
+
         except:
             pass
 
